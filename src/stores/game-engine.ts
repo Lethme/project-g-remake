@@ -15,9 +15,10 @@ export const useGameEngineStore = defineStore('game', () => {
             target: 60,
             limit: 120,
         },
+        mode: Phaser.Scale.RESIZE,
         parent: 'canvas',
-        width: 1920,
-        height: 1000,
+        width: window.innerWidth,
+        height: window.innerHeight,
         physics: {
             default: 'arcade',
             arcade: {
@@ -38,13 +39,13 @@ export const useGameEngineStore = defineStore('game', () => {
     const mount = async () => {
         if (!isMounted.value) {
             for (const hook of onBeforeMountedHooks.value) {
-                hook.apply(undefined);
+                await hook.apply(undefined);
             }
 
             _engine.value = new Phaser.Game(gameConfig);
 
             for (const hook of onMountedHooks.value) {
-                hook.apply(undefined, [_engine.value]);
+                await hook.apply(undefined, [_engine.value]);
             }
         }
     }
@@ -52,15 +53,27 @@ export const useGameEngineStore = defineStore('game', () => {
     const unmount = async () => {
         if (isMounted.value) {
             for (const hook of onBeforeUnmountedHooks.value) {
-                hook.apply(undefined, [_engine.value!]);
+                await hook.apply(undefined, [_engine.value!]);
             }
 
             _engine.value?.destroy(true, false);
             _engine.value = undefined;
 
             for (const hook of onUnmountedHooks.value) {
-                hook.apply(undefined);
+                await hook.apply(undefined);
             }
+        }
+    }
+
+    const resize = () => {
+        if (typeof gameConfig?.parent === "string") {
+            const canvas = document.querySelector(`#${gameConfig?.parent} canvas`) as HTMLCanvasElement;
+
+            // canvas.width = window.innerWidth;
+            // canvas.height = window.innerHeight;
+
+            //_engine.value?.scale.resize(window.innerWidth, window.innerHeight);
+            _engine.value?.scale.setGameSize(window.innerWidth, window.innerHeight);
         }
     }
 
@@ -85,6 +98,7 @@ export const useGameEngineStore = defineStore('game', () => {
         isMounted,
         mount,
         unmount,
+        resize,
         onMounted,
         onUnmounted,
         onBeforeMounted,

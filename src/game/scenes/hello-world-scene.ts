@@ -6,6 +6,9 @@ export default class HelloWorldScene extends Phaser.Scene {
     player!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     playerAnimation!: Phaser.Animations.Animation;
     cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+    controlsKeys?: {
+        [key: string]: Phaser.Input.Keyboard.Key,
+    };
 
     beerPushedScore = 0;
     beerPushedScoreText?: Phaser.GameObjects.Text;
@@ -27,14 +30,17 @@ export default class HelloWorldScene extends Phaser.Scene {
             frameWidth: 50,
             frameHeight: 60,
             startFrame: 0,
-            endFrame: 5,
+            endFrame: 7,
         });
     }
 
     create() {
-        const image = this.add.image(400, 300, 'sky');
+        const image = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'sky');
 
-        image.setScale(3.8, 3);
+        let scaleX = this.cameras.main.width / image.width
+        let scaleY = this.cameras.main.height / image.height
+        let scale = Math.max(scaleX, scaleY)
+        image.setScale(scale).setScrollFactor(0)
 
         this.logo = this.physics.add.image(400, 100, 'beer');
 
@@ -49,7 +55,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             frameRate: 60 / 8,
             frames: this.anims.generateFrameNumbers("player", {
                 start: 0,
-                end: 5,
+                end: 7,
             }),
             repeat: -1,
         }) as Phaser.Animations.Animation;
@@ -67,10 +73,6 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.beerPushedScoreText?.setText(`You pushed the beer ${this.beerPushedScore} times`);
         });
 
-        this.physics.world.on("worldbounds", (body: any, up: any, down: any, left: any, right: any) => {
-            console.log("TYest");
-        })
-
         this.beerPushedScoreText = this.add.text(16, 16, "You pushed the beer 0 times", { fontSize: '32px', color: '#fff' });
 
         const escapeButton = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
@@ -78,18 +80,25 @@ export default class HelloWorldScene extends Phaser.Scene {
         escapeButton?.on("down", () => {
             this.game.isPaused ? this.game.resume() : this.game.pause();
         });
+
+        this.controlsKeys = this.input.keyboard?.addKeys({
+            up: "W",
+            right: "D",
+            down: "S",
+            left: "A",
+        }) as any;
     }
 
-    update(time: number, delta: number) {
+    override update(time: number, delta: number) {
         super.update(time, delta);
 
         this.logo.setRotation(this.logo?.rotation + 0.05);
 
-        if (this.cursors?.left.isDown)
+        if (this.cursors?.left.isDown || this.controlsKeys?.left.isDown)
         {
             this.player.setVelocityX(-800);
         }
-        else if (this.cursors?.right.isDown)
+        else if (this.cursors?.right.isDown || this.controlsKeys?.right.isDown)
         {
             this.player.setVelocityX(800);
         }
@@ -98,7 +107,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             this.player.setVelocityX(0);
         }
 
-        if (this.cursors?.up.isDown && this.player.body.blocked.down)
+        if ((this.cursors?.up.isDown || this.controlsKeys?.up.isDown) && this.player.body.blocked.down)
         {
             this.player.setVelocityY(-1000);
         }
@@ -109,8 +118,7 @@ export default class HelloWorldScene extends Phaser.Scene {
             }
         } else {
             if (this.player.anims.isPlaying) {
-                this.player.setFrame(this.utils.randomInt(0, 1) ? 3 : 0);
-                this.player.anims.pause(this.playerAnimation.frames[6]);
+                this.player.anims.pause(this.playerAnimation.frames[this.utils.randomInt(0, 1) ? 4 : 0]);
             }
         }
     }
