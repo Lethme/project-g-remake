@@ -1,1 +1,0 @@
-export type TypeOf<T, TKey extends keyof T> = T[TKey];
