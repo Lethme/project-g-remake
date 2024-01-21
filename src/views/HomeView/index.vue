@@ -11,12 +11,12 @@ import {useUtils} from "@/utils";
 const { env } = useUtils();
 const game = useGameEngineStore();
 
-onMounted(() => {
-    game.mount();
+onMounted(async () => {
+    await game.mount();
 });
 
-onUnmounted(() => {
-    game.unmount();
+onUnmounted(async () => {
+    await game.unmount();
 });
 </script>
 
