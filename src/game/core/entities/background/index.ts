@@ -24,7 +24,7 @@ class GBackground extends GEntity<Phaser.GameObjects.TileSprite> {
         let scale = Math.max(scaleX, scaleY);
         this.background.setScale(scaleX, scaleY).setScrollFactor(0);
 
-        this.background.tileScaleX = (this.background.width / this.scene.cameras.main.width) / 1.7;
+        this.background.tileScaleX = (this.background.width / this.scene.cameras.main.width) / (16 / 9);
     }
 
     public override update(time: number, delta: number): void {

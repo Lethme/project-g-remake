@@ -5,7 +5,7 @@ type EventEmitterEvents = {
 }
 
 class EventEmitter {
-    events: EventEmitterEvents;
+    protected events: EventEmitterEvents;
 
     constructor() {
         this.events = {};

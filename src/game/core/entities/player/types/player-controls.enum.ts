@@ -2,7 +2,8 @@ enum GPlayerControls {
     W,
     A,
     S,
-    D
+    D,
+    SPACE,
 }
 
 export default GPlayerControls;
