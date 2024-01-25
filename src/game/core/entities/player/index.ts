@@ -11,9 +11,14 @@ import {
     GBulletGroup,
 } from "@/game/core/entities/player/bullet";
 
+import {
+    usePlayer,
+    usePlayerAnimations,
+} from "@/game/core/entities/player/hooks";
+
 class GPlayer extends GEntity<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody> {
     protected player!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
-    protected playerAnimation!: Phaser.Animations.Animation;
+    protected playerMovingRightAnimation!: Phaser.Animations.Animation;
     protected playerMovingLeftAnimation!: Phaser.Animations.Animation;
     protected cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     protected controlsKeys!: {
@@ -51,39 +56,15 @@ class GPlayer extends GEntity<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>
     }
 
     public override create(): void {
-        this.playerAnimation = this.scene.anims.create({
-            key: GPlayerSpritesheet.MOVING_RIGHT,
-            frameRate: 60 / 8,
-            frames: this.scene.anims.generateFrameNumbers(GPlayerSpritesheet.MOVING_RIGHT, {
-                start: 0,
-                end: 7,
-            }),
-            repeat: -1,
-        }) as Phaser.Animations.Animation;
+        usePlayer(this.scene, (result) => {
+            this.playerMovingRightAnimation = result.animations.playerMovingRightAnimation;
+            this.playerMovingLeftAnimation = result.animations.playerMovingLeftAnimation;
 
-        this.playerMovingLeftAnimation = this.scene.anims.create({
-            key: GPlayerSpritesheet.MOVING_LEFT,
-            frameRate: 60 / 8,
-            frames: this.scene.anims.generateFrameNumbers(GPlayerSpritesheet.MOVING_LEFT, {
-                start: 0,
-                end: 7,
-            }),
-            repeat: -1,
-        }) as Phaser.Animations.Animation;
+            this.player = result.player;
 
-        this.player = this.scene.physics.add.sprite(100, 1000, GPlayerSpritesheet.MOVING_RIGHT).setScale(2, 2).play(GPlayerSpritesheet.MOVING_RIGHT);
-        this.player.body.setGravityY(2000);
-        this.player.body.setCollideWorldBounds(true);
-
-        this.cursors = this.scene.input.keyboard?.createCursorKeys()!;
-
-        this.controlsKeys = this.scene.input.keyboard?.addKeys({
-            W: "W",
-            D: "D",
-            S: "S",
-            A: "A",
-            SPACE: "Space",
-        }) as any;
+            this.cursors = result.controls.cursors;
+            this.controlsKeys = result.controls.controlsKeys;
+        });
 
         this.cds = new GBulletGroup(this.scene);
 
@@ -94,6 +75,23 @@ class GPlayer extends GEntity<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>
     }
 
     public override update(time: number, delta: number): void {
+        this.updateControls(time, delta);
+        this.updateJumpAnimation(time, delta);
+    }
+
+    private updateJumpAnimation(time: number, delta: number) {
+        if (this.player.body.blocked.down) {
+            if (this.player.anims.isPaused) {
+                this.player.anims.resume();
+            }
+        } else {
+            if (this.player.anims.isPlaying) {
+                this.player.anims.pause(this.player.anims.currentAnim?.frames[this.utils.randomInt(0, 1) ? 4 : 0]);
+            }
+        }
+    }
+
+    private updateControls(time: number, delta: number) {
         if (this.cursors.left.isDown || this.controlsKeys.A.isDown)
         {
             if (this.player.texture.key !== GPlayerSpritesheet.MOVING_LEFT) {
@@ -126,16 +124,6 @@ class GPlayer extends GEntity<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>
         {
             this.player.setVelocityY(-1000);
         }
-
-        if (this.player.body.blocked.down) {
-            if (this.player.anims.isPaused) {
-                this.player.anims.resume();
-            }
-        } else {
-            if (this.player.anims.isPlaying) {
-                this.player.anims.pause(this.player.anims.currentAnim?.frames[this.utils.randomInt(0, 1) ? 4 : 0]);
-            }
-        }
     }
 
     public addBullets(amount: number) {
@@ -145,8 +133,9 @@ class GPlayer extends GEntity<Phaser.Types.Physics.Arcade.SpriteWithDynamicBody>
 
     public override destroy(): void {
         this.player.destroy();
-        this.playerAnimation.destroy();
+        this.playerMovingRightAnimation.destroy();
         this.playerMovingLeftAnimation.destroy();
+        this.cds.destroy();
     }
 
     public static Create(scene: Phaser.Scene) {
